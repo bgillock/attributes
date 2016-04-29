@@ -1,0 +1,182 @@
+---
+swagger: "2.0"
+info:
+  description: "Access seismic on an HTTP server"
+  version: "1.0.0"
+  title: "Attribute Server API"
+host: "localhost:3000"
+basePath: "/seismic/v1"
+schemes:
+- "http"
+produces:
+- "application/json"
+paths:
+  /attributes:
+    get:
+      tags:
+      - "Attributes"
+      summary: "Attributes already stored"
+      description: "Returns a list of attributes that exist.\n"
+      operationId: "attributeGET"
+      parameters: []
+      responses:
+        200:
+          description: "An array of Names and IDs"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/AttributeID"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/Error"
+      x-swagger-router-controller: "Attributes"
+  /readline/{id}:
+    get:
+      tags:
+      - "Read Line"
+      summary: "Returns the attribute calculated"
+      description: "A Base64 buffer is returned with the samples for the specified\
+        \ range. Number of samples per trace and bits per sample is from the header."
+      operationId: "readLineGET"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "id for settings"
+        required: true
+        type: "string"
+      - name: "line"
+        in: "query"
+        description: "inline using annotation coordinate"
+        required: true
+        type: "number"
+        format: "integer"
+      - name: "starXline"
+        in: "query"
+        description: "first xline using annotation coordinate"
+        required: true
+        type: "number"
+        format: "integer"
+      - name: "nTraces"
+        in: "query"
+        description: "number of traces to read"
+        required: true
+        type: "number"
+        format: "integer"
+      responses:
+        200:
+          description: "Buffer of seismic"
+          schema:
+            $ref: "#/definitions/Buffer"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/Error"
+      x-swagger-router-controller: "Read Line"
+  /settings/{id}:
+    get:
+      tags:
+      - "GetSettings"
+      summary: "Settings for the parameters of an attribute"
+      description: "A JSON description of the parameters and settings for the attribute."
+      operationId: "settingsGET"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "ID of settings that needs to be fetched"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "Contents of the header of the file"
+          schema:
+            $ref: "#/definitions/Settings"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/Error"
+      x-swagger-router-controller: "GetSettings"
+    post:
+      tags:
+      - "SaveSettings"
+      summary: "Save settings"
+      operationId: "settingsPOST"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "ID of settings that needs to be fetched"
+        required: true
+        type: "string"
+      - in: "body"
+        name: "settings"
+        description: "Settings"
+        required: false
+        schema:
+          $ref: "#/definitions/Settings"
+      responses:
+        200:
+          description: "Save successful"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/Error"
+      x-swagger-router-controller: "SaveSettings"
+definitions:
+  AttributeID:
+    type: "object"
+    properties:
+      name:
+        type: "string"
+        description: "name of attribute"
+      id:
+        type: "string"
+        description: "ID of attribute"
+  SeismicCube:
+    type: "object"
+    properties:
+      name:
+        type: "string"
+        description: "name of cube"
+      id:
+        type: "string"
+        description: "ID of cube"
+  Settings:
+    type: "object"
+    properties:
+      name:
+        type: "string"
+        description: "Attribute name"
+      inputs:
+        type: "array"
+        description: "Array of input volumes"
+        items:
+          $ref: "#/definitions/SeismicCube"
+      outputs:
+        type: "array"
+        description: "Array of output volumes"
+        items:
+          $ref: "#/definitions/SeismicCube"
+      windowsize:
+        type: "number"
+        description: "number of samples around sample is needed in input"
+      customparameters:
+        type: "object"
+        description: "Freeform collection of parameter value pairs needed by attribute"
+        properties: {}
+  Buffer:
+    type: "object"
+    properties:
+      buff:
+        type: "string"
+        format: "base64"
+        description: "base64 string of requested size"
+  Error:
+    type: "object"
+    properties:
+      code:
+        type: "integer"
+        format: "int32"
+      message:
+        type: "string"
+      fields:
+        type: "string"
